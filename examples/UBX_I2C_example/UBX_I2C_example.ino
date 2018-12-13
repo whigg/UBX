@@ -38,13 +38,17 @@ void setup()
     while (1);
   }
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
+
+  gps.sendCfg();
 }
 
 void loop() {
+  uint8_t msg;
   // checking to see if a good packet has
   // been received and displaying some
   // of the packet data
-  if(gps.readSensor()) {
+  msg = gps.readSensor();
+  if(msg=gps.MT_NAV_PVT) {
     Serial.print(gps.getYear());                ///< [year], Year (UTC)
     Serial.print("\t");
     Serial.print(gps.getMonth());               ///< [month], Month, range 1..12 (UTC)
@@ -65,5 +69,25 @@ void loop() {
     Serial.print("\t");
     Serial.println(gps.getMSLHeight_ft());      ///< [ft], Height above mean sea level
   }
-  delay(250); //Don't pound too hard on the bus
+  if(msg=gps.MT_ESF_STA) {
+    Serial.print(gps.getFusionMode(),10);
+    Serial.print("\t");
+    Serial.println(gps.getNumSens(),10);
+  }
+  if(msg=gps.MT_ESF_INS) {
+    Serial.print(gps.getBitfield0(),10);
+    Serial.print("\t");
+    Serial.print(gps.getxAngRate(),10);
+    Serial.print("\t");
+    Serial.print(gps.getyAngRate(),10);
+    Serial.print("\t");
+    Serial.print(gps.getzAngRate(),10);
+    Serial.print("\t");
+    Serial.print(gps.getxAccel(),10);
+    Serial.print("\t");
+    Serial.print(gps.getyAccel(),10);
+    Serial.print("\t");
+    Serial.println(gps.getzAccel(),10);
+  }
+  delay(50); //Don't pound too hard on the bus
 }

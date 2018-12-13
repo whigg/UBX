@@ -27,6 +27,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define I2C_BUFFER_LENGTH 32
 #define UBX_MAX_LENGTH 96
 
+//-=-=-=-=- UBX binary specific variables
+
 class UBX_I2C{
   public:
     UBX_I2C(void);
@@ -55,6 +57,7 @@ class UBX_I2C{
       FLOAT_SOL,
       FIXED_SOL
     };
+    bool sendCfg();
     uint8_t readSensor();
     uint32_t getTow_ms();
     uint16_t getYear();
@@ -111,15 +114,25 @@ class UBX_I2C{
     bool isValidTime();
     bool isTimeFullyResolved();
     bool isMagneticDeclinationValid();
-
-	private:
+    uint8_t getFusionMode();
+    uint8_t getNumSens();
+    uint32_t getBitfield0();
+    double getxAngRate();
+    double getyAngRate();
+    double getzAngRate();
+    double getxAccel();
+    double getyAccel();
+    double getzAccel();
+	
 	enum _ubxMsgType {
 	MT_NONE,
 	MT_NAV_PVT,
 	MT_ESF_INS,
 	MT_ESF_STA
 	};
-    struct _UBX_MSG {
+
+	private:
+	struct _UBX_MSG {
     uint16_t msg_class_id;
 	uint16_t msg_length;
     uint8_t payload[UBX_MAX_LENGTH];
@@ -189,22 +202,22 @@ class UBX_I2C{
     _UBX_ESF_INS _EsfInsPacket;
     _UBX_ESF_STA _EsfStaPacket;
 
+	const uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
+	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
+    const uint8_t _ubxHeader[2] = {0xB5, 0x62};
     const double _PI = 3.14159265358979323846;
     const float _m2ft = 3.28084;
     const float _deg2rad = _PI/180.0;
 	
 	// Variables
     TwoWire* _bus; //The generic connection to user's chosen I2C hardware
-	const uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
-	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
 	unsigned long lastCheck = 0;
     uint8_t _currentMsgType = MT_NONE;
-	
   	uint8_t _parserState;
-    const uint8_t _ubxHeader[2] = {0xB5, 0x62};
     uint8_t _checksum[2];
 
 	// Functions
+	boolean _sendCommand(); //Given a packet and payload, send everything including CRC bytes
 	uint8_t _parse(uint8_t _byte);
 	void _calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length);
 };
