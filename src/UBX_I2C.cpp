@@ -36,7 +36,7 @@ void UBX_I2C::begin(TwoWire &wirePort)
 }
 
 //Returns true if I2C device ack's
-boolean UBX_I2C::isConnected()
+bool UBX_I2C::isConnected()
 {
   _bus->beginTransmission((uint8_t)_gpsI2Caddress);
   if (_bus->endTransmission() != 0)
@@ -50,9 +50,6 @@ uint8_t UBX_I2C::readSensor()
 {
   if (millis() - lastCheck >= I2C_POLLING_WAIT_MS)
   {
-    _parserState = 0;
-	_tempPacket.msg_length = 4;
-	_currentMsgType = MT_NONE;
 	//Get the number of bytes available from the module
     uint16_t bytesAvailable = 0;
     _bus->beginTransmission(_gpsI2Caddress);
@@ -87,7 +84,8 @@ uint8_t UBX_I2C::readSensor()
       {
         for (uint16_t x = 0 ; x < bytesToRead ; x++)
         {
-          _currentMsgType=_parse(_bus->read()); //Grab the actual character and process it
+          _currentMsgType = _parse(_bus->read());
+		  if (_currentMsgType) return (_currentMsgType);
         }
       }
       else
@@ -97,7 +95,7 @@ uint8_t UBX_I2C::readSensor()
     }
   } //end timed read
 
-  return (_currentMsgType);
+  return (MT_NONE);
 
 } //end checkUbloxI2C()
 
@@ -126,6 +124,7 @@ uint8_t UBX_I2C::_parse(uint8_t _byte)
 			} else if ((_parserState - 2) == (_tempPacket.msg_length+6)) {
 				_parserState = 0;
 				if (_byte == _checksum[1]) {
+					_parserState = 0;
 					switch (_tempPacket.msg_class_id) {
 					case 0x0701: //NAV_PVT
 						memcpy(&_NavPvtPacket,&_tempPacket,sizeof(_NavPvtPacket));
@@ -133,6 +132,12 @@ uint8_t UBX_I2C::_parse(uint8_t _byte)
 					case 0x1510: //ESF_INS
 						memcpy(&_EsfInsPacket,&_tempPacket,sizeof(_EsfInsPacket));
 						return MT_ESF_INS;
+					case 0x0210: //ESF_MEA
+						memcpy(&_EsfMeaPacket,&_tempPacket,sizeof(_EsfMeaPacket));
+						return MT_ESF_MEA;
+					case 0x0310: //ESF_RAW
+						memcpy(&_EsfRawPacket,&_tempPacket,sizeof(_EsfRawPacket));
+						return MT_ESF_RAW;
 					case 0x1010: //ESF_STATUS
 						memcpy(&_EsfStaPacket,&_tempPacket,sizeof(_EsfStaPacket));
 						return MT_ESF_STA;
@@ -175,71 +180,77 @@ const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x01,0x00,0x00,0x00
 
 	for (uint8_t i=0; i < sizeof(msg_cfg_prt); i++)
       *((uint8_t *) &_tempPacket + i) = msg_cfg_prt[i];
-	_sendCommand();
+	if (not _sendCommand()) return (false);
 	for (uint8_t i=0; i < sizeof(msg_nav_pvt); i++)
       *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
-	_sendCommand();
-	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
-	_sendCommand();
+	if (not _sendCommand()) return (false);
 	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
       *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
-	_sendCommand();
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_mea); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_mea[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_raw); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_raw[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
+	if (not _sendCommand()) return (false);
+return (true);
 }
 //Given a packet and payload, send everything including CRC bytes
-boolean UBX_I2C::_sendCommand()
+bool UBX_I2C::_sendCommand()
 {
-  
-  //Point at 0xFF data register
-  _bus->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
-  _bus->write(0xFF);
-  if (_bus->endTransmission() != 0) //Don't release bus
-    return (false); //Sensor did not ACK
+	//Point at 0xFF data register
+	_bus->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
+	_bus->write(0xFF);
+	if (_bus->endTransmission() != 0) //Don't release bus
+		return (false); //Sensor did not ACK
 
-  //Write payload. Limit the sends into 32 byte chunks
-  //This code based on ublox: https://forum.u-blox.com/index.php/20528/how-to-use-i2c-to-get-the-nmea-frames
-  uint16_t bytesToSend = _tempPacket.msg_length+4;
+	//Write payload. Limit the sends into 32 byte chunks
+	//This code based on ublox: https://forum.u-blox.com/index.php/20528/how-to-use-i2c-to-get-the-nmea-frames
+	uint16_t bytesToSend = _tempPacket.msg_length+4;
 
-  //Write header bytes
-  _bus->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
-  _bus->write(_ubxHeader[0]);
-  _bus->write(_ubxHeader[1]);
- if (_bus->endTransmission(false) != 0) //Don't release bus
-    return (false); //Sensor did not ACK
+	//Write header bytes
+	_bus->beginTransmission((uint8_t)_gpsI2Caddress); //There is no register to write to, we just begin writing data bytes
+	_bus->write(_ubxHeader[0]);
+	_bus->write(_ubxHeader[1]);
+	if (_bus->endTransmission(false) != 0) //Don't release bus
+		return (false); //Sensor did not ACK
 
-  //"The number of data bytes must be at least 2 to properly distinguish
-  //from the write access to set the address counter in random read accesses."
-  uint16_t startSpot = 0;
-  while (bytesToSend > 1)
-  {
-    uint8_t len = bytesToSend;
-    if (len > I2C_BUFFER_LENGTH) len = I2C_BUFFER_LENGTH;
-
-    _bus->beginTransmission((uint8_t)_gpsI2Caddress);
-
-    for (uint16_t x = 0 ; x < len ; x++)
+	//"The number of data bytes must be at least 2 to properly distinguish
+	//from the write access to set the address counter in random read accesses."
+	uint16_t startSpot = 0;
+	while (bytesToSend > 1)
 	{
-      _bus->write(*((uint8_t *) &_tempPacket + startSpot + x)); //Write a portion of the payload to the bus
-	}
+		uint8_t len = bytesToSend;
+		if (len > I2C_BUFFER_LENGTH) len = I2C_BUFFER_LENGTH;
+
+		_bus->beginTransmission((uint8_t)_gpsI2Caddress);
+
+		for (uint16_t x = 0 ; x < len ; x++)
+		{
+		_bus->write(*((uint8_t *) &_tempPacket + startSpot + x)); //Write a portion of the payload to the bus
+		}
 
     if (_bus->endTransmission(false) != 0) //Don't release bus
-      return (false); //Sensor did not ACK
+		return (false); //Sensor did not ACK
 
     //*outgoingUBX.payload += len; //Move the pointer forward
-    startSpot += len; //Move the pointer forward
-    bytesToSend -= len;
-  }
-  _calcChecksum(_checksum,((uint8_t *) &_tempPacket),(_tempPacket.msg_length+4));
-  //Write checksum
-  _bus->beginTransmission((uint8_t)_gpsI2Caddress);
-  _bus->write(_checksum[0]);
-  _bus->write(_checksum[1]);
-  if (_bus->endTransmission() != 0)
-    return (false); //Sensor did not ACK
-  
-  return (true);
-}
+	startSpot += len; //Move the pointer forward
+	bytesToSend -= len;
+	}
+	_calcChecksum(_checksum,((uint8_t *) &_tempPacket),(_tempPacket.msg_length+4));
+	//Write checksum
+	_bus->beginTransmission((uint8_t)_gpsI2Caddress);
+	if (bytesToSend == 1) _bus->write(*((uint8_t *) &_tempPacket + startSpot)); // combine last byte with the checksum
+	_bus->write(_checksum[0]);
+	_bus->write(_checksum[1]);
+	if (_bus->endTransmission() != 0)
+	return (false); //Sensor did not ACK
 
+	return (true);
+}
 /* GPS time of week of nav solution, ms */
 uint32_t UBX_I2C::getTow_ms()
 {
@@ -304,60 +315,6 @@ double UBX_I2C::getLongitude_deg()
 double UBX_I2C::getLatitude_deg()
 {
 	return (double)_NavPvtPacket.lat * 1e-7;
-}
-
-/* height above the ellipsoid, ft */
-double UBX_I2C::getEllipsoidHeight_ft()
-{
-	return (double)_NavPvtPacket.height * 1e-3 * _m2ft;
-}
-
-/* height above mean sea level, ft */
-double UBX_I2C::getMSLHeight_ft()
-{
-	return (double)_NavPvtPacket.hMSL * 1e-3 * _m2ft;
-}
-
-/* horizontal accuracy estimate, ft */
-double UBX_I2C::getHorizontalAccuracy_ft()
-{
-	return (double)_NavPvtPacket.hAcc * 1e-3 * _m2ft;
-}
-
-/* vertical accuracy estimate, ft */
-double UBX_I2C::getVerticalAccuracy_ft()
-{
-	return (double)_NavPvtPacket.vAcc * 1e-3 * _m2ft;
-}
-
-/* NED north velocity, ft/s */
-double UBX_I2C::getNorthVelocity_fps()
-{
-	return (double)_NavPvtPacket.velN * 1e-3 * _m2ft;
-}
-
-/* NED east velocity, ft/s */
-double UBX_I2C::getEastVelocity_fps()
-{
-	return (double)_NavPvtPacket.velE * 1e-3 * _m2ft;
-}
-
-/* NED down velocity ft/s */
-double UBX_I2C::getDownVelocity_fps()
-{
-	return (double)_NavPvtPacket.velD * 1e-3 * _m2ft;
-}
-
-/* 2D ground speed, ft/s */
-double UBX_I2C::getGroundSpeed_fps()
-{
-	return (double)_NavPvtPacket.gSpeed * 1e-3 * _m2ft;
-}
-
-/* speed accuracy estimate, ft/s */
-double UBX_I2C::getSpeedAccuracy_fps()
-{
-	return (double)_NavPvtPacket.sAcc * 1e-3 * _m2ft;
 }
 
 /* 2D heading of motion, deg */
@@ -569,6 +526,8 @@ bool UBX_I2C::isMagneticDeclinationValid()
 {
 	return _NavPvtPacket.valid & 0x08;
 }
+
+
 /////////////////////////////////////////////////////////////////////////////
 /* ESF Status */
 uint8_t UBX_I2C::getFusionMode()
@@ -607,4 +566,98 @@ double UBX_I2C::getyAccel()
 double UBX_I2C::getzAccel()
 {
 	return (double)_EsfInsPacket.zAccel * 1e-2;
+}
+/* ESF Raw */
+uint32_t UBX_I2C::getRawData0()
+{
+	return _EsfRawPacket.data0;
+}
+uint32_t UBX_I2C::getRawData1()
+{
+	return _EsfRawPacket.data1;
+}uint32_t UBX_I2C::getRawData2()
+{
+	return _EsfRawPacket.data2;
+}uint32_t UBX_I2C::getRawData3()
+{
+	return _EsfRawPacket.data3;
+}uint32_t UBX_I2C::getRawData4()
+{
+	return _EsfRawPacket.data4;
+}uint32_t UBX_I2C::getRawData5()
+{
+	return _EsfRawPacket.data5;
+}uint32_t UBX_I2C::getRawData6()
+{
+	return _EsfRawPacket.data6;
+}
+uint32_t UBX_I2C::getRawsTtag0()
+{
+	return _EsfRawPacket.sTtag0;
+}
+uint32_t UBX_I2C::getRawsTtag1()
+{
+	return _EsfRawPacket.sTtag1;
+}uint32_t UBX_I2C::getRawsTtag2()
+{
+	return _EsfRawPacket.sTtag2;
+}uint32_t UBX_I2C::getRawsTtag3()
+{
+	return _EsfRawPacket.sTtag3;
+}uint32_t UBX_I2C::getRawsTtag4()
+{
+	return _EsfRawPacket.sTtag4;
+}uint32_t UBX_I2C::getRawsTtag5()
+{
+	return _EsfRawPacket.sTtag5;
+}uint32_t UBX_I2C::getRawsTtag6()
+{
+	return _EsfRawPacket.sTtag6;
+}
+/* ESF Mea */
+uint32_t UBX_I2C::getMeaData0()
+{
+	return _EsfMeaPacket.data0;
+}
+uint32_t UBX_I2C::getMeaData1()
+{
+	return _EsfMeaPacket.data1;
+}uint32_t UBX_I2C::getMeaData2()
+{
+	return _EsfMeaPacket.data2;
+}uint32_t UBX_I2C::getMeaData3()
+{
+	return _EsfMeaPacket.data3;
+}uint32_t UBX_I2C::getMeaData4()
+{
+	return _EsfMeaPacket.data4;
+}uint32_t UBX_I2C::getMeaData5()
+{
+	return _EsfMeaPacket.data5;
+}uint32_t UBX_I2C::getMeaData6()
+{
+	return _EsfMeaPacket.data6;
+}
+uint32_t UBX_I2C::getMeaCalibTtag0()
+{
+	return _EsfMeaPacket.calibTtag0;
+}
+uint32_t UBX_I2C::getMeaCalibTtag1()
+{
+	return _EsfMeaPacket.calibTtag1;
+}uint32_t UBX_I2C::getMeaCalibTtag2()
+{
+	return _EsfMeaPacket.calibTtag2;
+}uint32_t UBX_I2C::getMeaCalibTtag3()
+{
+	return _EsfMeaPacket.calibTtag3;
+}uint32_t UBX_I2C::getMeaCalibTtag4()
+{
+	return _EsfMeaPacket.calibTtag4;
+}uint32_t UBX_I2C::getMeaCalibTtag5()
+{
+	return _EsfMeaPacket.calibTtag5;
+}uint32_t UBX_I2C::getMeaCalibTtag6()
+{
+	return _EsfMeaPacket.calibTtag6;
 }

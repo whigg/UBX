@@ -34,7 +34,7 @@ class UBX_I2C{
     UBX_I2C(void);
     //By default use the default I2C address, and use Wire port
     void begin(TwoWire &wirePort);
-	boolean isConnected(); //Returns turn if device answers on _gpsI2Caddress address
+	bool isConnected(); //Returns turn if device answers on _gpsI2Caddress address
 
     enum FixType {
       NO_FIX = 0,
@@ -70,22 +70,6 @@ class UBX_I2C{
     uint8_t getNumSatellites();
     double getLongitude_deg();
     double getLatitude_deg();
-    double getEllipsoidHeight_ft();
-    double getMSLHeight_ft();
-    double getHorizontalAccuracy_ft();
-    double getVerticalAccuracy_ft();
-    double getNorthVelocity_fps();
-    double getEastVelocity_fps();
-    double getDownVelocity_fps();
-    double getGroundSpeed_fps();
-    double getSpeedAccuracy_fps();
-    double getMotionHeading_deg();
-    double getVehicleHeading_deg();
-    double getHeadingAccuracy_deg();
-    float getMagneticDeclination_deg();
-    float getMagneticDeclinationAccuracy_deg();
-    double getLongitude_rad();
-    double getLatitude_rad();
     double getEllipsoidHeight_m();
     double getMSLHeight_m();
     double getHorizontalAccuracy_m();
@@ -95,6 +79,13 @@ class UBX_I2C{
     double getDownVelocity_ms();
     double getGroundSpeed_ms();
     double getSpeedAccuracy_ms();
+    double getMotionHeading_deg();
+    double getVehicleHeading_deg();
+    double getHeadingAccuracy_deg();
+    float getMagneticDeclination_deg();
+    float getMagneticDeclinationAccuracy_deg();
+    double getLongitude_rad();
+    double getLatitude_rad();
     double getMotionHeading_rad();
     double getVehicleHeading_rad();
     double getHeadingAccuracy_rad();
@@ -124,10 +115,42 @@ class UBX_I2C{
     double getyAccel();
     double getzAccel();
 	
+    uint32_t getRawData0();
+    uint32_t getRawData1();
+    uint32_t getRawData2();
+    uint32_t getRawData3();
+    uint32_t getRawData4();
+    uint32_t getRawData5();
+    uint32_t getRawData6();
+    uint32_t getRawsTtag0();
+    uint32_t getRawsTtag1();
+    uint32_t getRawsTtag2();
+    uint32_t getRawsTtag3();
+    uint32_t getRawsTtag4();
+    uint32_t getRawsTtag5();
+    uint32_t getRawsTtag6();
+
+    uint32_t getMeaData0();
+    uint32_t getMeaData1();
+    uint32_t getMeaData2();
+    uint32_t getMeaData3();
+    uint32_t getMeaData4();
+    uint32_t getMeaData5();
+    uint32_t getMeaData6();
+    uint32_t getMeaCalibTtag0();
+    uint32_t getMeaCalibTtag1();
+    uint32_t getMeaCalibTtag2();
+    uint32_t getMeaCalibTtag3();
+    uint32_t getMeaCalibTtag4();
+    uint32_t getMeaCalibTtag5();
+    uint32_t getMeaCalibTtag6();
+
 	enum _ubxMsgType {
 	MT_NONE,
 	MT_NAV_PVT,
 	MT_ESF_INS,
+	MT_ESF_MEA,
+	MT_ESF_RAW,
 	MT_ESF_STA
 	};
 
@@ -139,7 +162,7 @@ class UBX_I2C{
 	};
     struct _UBX_NAV_PVT {
       uint16_t msg_class_id;
-      uint16_t msg_length;
+	  uint16_t msg_length;
       uint32_t iTOW;
       uint16_t year;
       uint8_t month;
@@ -186,6 +209,45 @@ class UBX_I2C{
       int32_t yAccel;
       int32_t zAccel;
      };
+    struct _UBX_ESF_MEA {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+      uint32_t timeTag;
+	  uint32_t flags;
+      uint32_t id;
+      uint32_t data0;
+	  uint32_t calibTtag0;
+      uint32_t data1;
+	  uint32_t calibTtag1;
+      uint32_t data2;
+	  uint32_t calibTtag2;
+      uint32_t data3;
+	  uint32_t calibTtag3;
+      uint32_t data4;
+	  uint32_t calibTtag4;
+      uint32_t data5;
+	  uint32_t calibTtag5;
+      uint32_t data6;
+	  uint32_t calibTtag6;
+     };
+    struct _UBX_ESF_RAW {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+      uint32_t data0;
+	  uint32_t sTtag0;
+      uint32_t data1;
+	  uint32_t sTtag1;
+      uint32_t data2;
+	  uint32_t sTtag2;
+      uint32_t data3;
+	  uint32_t sTtag3;
+      uint32_t data4;
+	  uint32_t sTtag4;
+      uint32_t data5;
+	  uint32_t sTtag5;
+      uint32_t data6;
+	  uint32_t sTtag6;
+     };
     struct _UBX_ESF_STA {
       uint16_t msg_class_id;
 	  uint16_t msg_length;
@@ -200,24 +262,25 @@ class UBX_I2C{
 	_UBX_MSG _tempPacket;
     _UBX_NAV_PVT _NavPvtPacket;
     _UBX_ESF_INS _EsfInsPacket;
+    _UBX_ESF_MEA _EsfMeaPacket;
+    _UBX_ESF_RAW _EsfRawPacket;
     _UBX_ESF_STA _EsfStaPacket;
 
 	const uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
 	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
     const uint8_t _ubxHeader[2] = {0xB5, 0x62};
     const double _PI = 3.14159265358979323846;
-    const float _m2ft = 3.28084;
     const float _deg2rad = _PI/180.0;
 	
 	// Variables
     TwoWire* _bus; //The generic connection to user's chosen I2C hardware
 	unsigned long lastCheck = 0;
-    uint8_t _currentMsgType = MT_NONE;
+    uint8_t _currentMsgType;
   	uint8_t _parserState;
     uint8_t _checksum[2];
 
 	// Functions
-	boolean _sendCommand(); //Given a packet and payload, send everything including CRC bytes
+	bool _sendCommand(); //Given a packet and payload, send everything including CRC bytes
 	uint8_t _parse(uint8_t _byte);
 	void _calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length);
 };

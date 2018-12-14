@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "Arduino.h"
 #include "UBX_UART.h"
 
+
 /* uBlox object, input the serial bus and baud rate */
 UBX_UART::UBX_UART(SoftwareSerial *bus)
 {
@@ -38,22 +39,14 @@ void UBX_UART::begin(uint32_t baud)
 //Times out after given amount of time
 uint8_t UBX_UART::readSensor()
 {
-  _parserState = 0;
-  _tempPacket.msg_length = 4;
-  _currentMsgType = MT_NONE;
-  uint8_t counter = 0;// the buffer is only 64 BYTE long.
-  if((_bus->available()))
-  {  
-    while (((_currentMsgType==MT_NONE))&&(counter<3))
-    {   
-        while (_bus->available())
+	for(int i=0; i<6; i++){
+		while (_bus->available()){
 		_currentMsgType=_parse(_bus->read());
-	delay(50); // wait for buffer refill
-	counter++;
-    }
-  }	
-  return (_currentMsgType);
-
+		if (_currentMsgType) return (_currentMsgType);
+		}
+		delay(25);
+	}	
+    return (MT_NONE);
 } //end checkUbloxI2C()
 
 /* parse the UBX data */
@@ -81,6 +74,7 @@ uint8_t UBX_UART::_parse(uint8_t _byte)
 			} else if ((_parserState - 2) == (_tempPacket.msg_length+6)) {
 				_parserState = 0;
 				if (_byte == _checksum[1]) {
+					_parserState = 0;
 					switch (_tempPacket.msg_class_id) {
 					case 0x0701: //NAV_PVT
 						memcpy(&_NavPvtPacket,&_tempPacket,sizeof(_NavPvtPacket));
@@ -88,6 +82,12 @@ uint8_t UBX_UART::_parse(uint8_t _byte)
 					case 0x1510: //ESF_INS
 						memcpy(&_EsfInsPacket,&_tempPacket,sizeof(_EsfInsPacket));
 						return MT_ESF_INS;
+					case 0x0210: //ESF_MEA
+						memcpy(&_EsfMeaPacket,&_tempPacket,sizeof(_EsfMeaPacket));
+						return MT_ESF_MEA;
+					case 0x0310: //ESF_RAW
+						memcpy(&_EsfRawPacket,&_tempPacket,sizeof(_EsfRawPacket));
+						return MT_ESF_RAW;
 					case 0x1010: //ESF_STATUS
 						memcpy(&_EsfStaPacket,&_tempPacket,sizeof(_EsfStaPacket));
 						return MT_ESF_STA;
@@ -111,6 +111,59 @@ void UBX_UART::_calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length)
 		CK[0] += payload[i];
 		CK[1] += CK[0];
 	}
+}
+bool UBX_UART::sendCfg()
+{
+// B5 62 06 00 14 00 01 00 00 00 D0 08 00 00 80 25 00 00 01 00 01 00 00 00 00 00 9A 79 //CFG_PRT
+// B5 62 06 01 08 00 01 07 01 00 00 00 00 00 18 E2 //NAV_PVT
+// B5 62 06 01 08 00 10 15 01 00 00 00 00 00 35 BC //ESF_INS 
+// B5 62 06 01 08 00 10 02 01 00 00 00 00 00 22 37 //ESF_MEAS	
+// B5 62 06 01 08 00 10 03 01 00 00 00 00 00 23 3E //ESF_RAW
+// B5 62 06 01 08 00 10 10 01 00 00 00 00 00 30 99 //ESF_STATUS
+
+const uint8_t msg_cfg_prt[] = {0x06,0x00,0x14,0x00,0x01,0x00,0x00,0x00,0xD0,0x08,0x00,0x00,0x80,0x25,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x00,0x00,0x00};
+const uint8_t msg_nav_pvt[] = {0x06,0x01,0x08,0x00,0x01,0x07,0x00,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_ins[] = {0x06,0x01,0x08,0x00,0x10,0x15,0x00,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_mea[] = {0x06,0x01,0x08,0x00,0x10,0x02,0x00,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_raw[] = {0x06,0x01,0x08,0x00,0x10,0x03,0x00,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x00,0x01,0x00,0x00,0x00,0x00};
+
+	for (uint8_t i=0; i < sizeof(msg_cfg_prt); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_cfg_prt[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_nav_pvt); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_mea); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_mea[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_raw); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_raw[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
+	if (not _sendCommand()) return (false);
+return (true);
+}
+//Given a packet and payload, send everything including CRC bytes
+bool UBX_UART::_sendCommand()
+{
+    //Write header bytes
+    _bus->write(_ubxHeader[0]);
+    _bus->write(_ubxHeader[1]);
+	//Write msg
+    for (uint16_t x = 0 ; x < _tempPacket.msg_length+4 ; x++)
+	{
+      _bus->write(*((uint8_t *) &_tempPacket + x)); //Write a portion of the payload to the bus
+	}
+	_calcChecksum(_checksum,((uint8_t *) &_tempPacket),(_tempPacket.msg_length+4));
+	//Write checksum
+	_bus->write(_checksum[0]);
+	_bus->write(_checksum[1]);
+	return (true);
 }
 /* GPS time of week of nav solution, ms */
 uint32_t UBX_UART::getTow_ms()
@@ -176,60 +229,6 @@ double UBX_UART::getLongitude_deg()
 double UBX_UART::getLatitude_deg()
 {
 	return (double)_NavPvtPacket.lat * 1e-7;
-}
-
-/* height above the ellipsoid, ft */
-double UBX_UART::getEllipsoidHeight_ft()
-{
-	return (double)_NavPvtPacket.height * 1e-3 * _m2ft;
-}
-
-/* height above mean sea level, ft */
-double UBX_UART::getMSLHeight_ft()
-{
-	return (double)_NavPvtPacket.hMSL * 1e-3 * _m2ft;
-}
-
-/* horizontal accuracy estimate, ft */
-double UBX_UART::getHorizontalAccuracy_ft()
-{
-	return (double)_NavPvtPacket.hAcc * 1e-3 * _m2ft;
-}
-
-/* vertical accuracy estimate, ft */
-double UBX_UART::getVerticalAccuracy_ft()
-{
-	return (double)_NavPvtPacket.vAcc * 1e-3 * _m2ft;
-}
-
-/* NED north velocity, ft/s */
-double UBX_UART::getNorthVelocity_fps()
-{
-	return (double)_NavPvtPacket.velN * 1e-3 * _m2ft;
-}
-
-/* NED east velocity, ft/s */
-double UBX_UART::getEastVelocity_fps()
-{
-	return (double)_NavPvtPacket.velE * 1e-3 * _m2ft;
-}
-
-/* NED down velocity ft/s */
-double UBX_UART::getDownVelocity_fps()
-{
-	return (double)_NavPvtPacket.velD * 1e-3 * _m2ft;
-}
-
-/* 2D ground speed, ft/s */
-double UBX_UART::getGroundSpeed_fps()
-{
-	return (double)_NavPvtPacket.gSpeed * 1e-3 * _m2ft;
-}
-
-/* speed accuracy estimate, ft/s */
-double UBX_UART::getSpeedAccuracy_fps()
-{
-	return (double)_NavPvtPacket.sAcc * 1e-3 * _m2ft;
 }
 
 /* 2D heading of motion, deg */
@@ -440,4 +439,139 @@ bool UBX_UART::isTimeFullyResolved()
 bool UBX_UART::isMagneticDeclinationValid()
 {
 	return _NavPvtPacket.valid & 0x08;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+/* ESF Status */
+uint8_t UBX_UART::getFusionMode()
+{
+	return _EsfStaPacket.fusionMode;
+}
+uint8_t UBX_UART::getNumSens()
+{
+	return _EsfStaPacket.numSens;
+}
+/* ESF Ins */
+uint32_t UBX_UART::getBitfield0()
+{
+	return _EsfInsPacket.bitfield0;
+}
+double UBX_UART::getxAngRate()
+{
+	return (double)_EsfInsPacket.xAngRate * 1e-3;
+}
+double UBX_UART::getyAngRate()
+{
+	return (double)_EsfInsPacket.yAngRate * 1e-3;
+}
+double UBX_UART::getzAngRate()
+{
+	return (double)_EsfInsPacket.zAngRate * 1e-3;
+}
+double UBX_UART::getxAccel()
+{
+	return (double)_EsfInsPacket.xAccel * 1e-2;
+}
+double UBX_UART::getyAccel()
+{
+	return (double)_EsfInsPacket.yAccel * 1e-2;
+}
+double UBX_UART::getzAccel()
+{
+	return (double)_EsfInsPacket.zAccel * 1e-2;
+}
+/* ESF Raw */
+uint32_t UBX_UART::getRawData0()
+{
+	return _EsfRawPacket.data0;
+}
+uint32_t UBX_UART::getRawData1()
+{
+	return _EsfRawPacket.data1;
+}uint32_t UBX_UART::getRawData2()
+{
+	return _EsfRawPacket.data2;
+}uint32_t UBX_UART::getRawData3()
+{
+	return _EsfRawPacket.data3;
+}uint32_t UBX_UART::getRawData4()
+{
+	return _EsfRawPacket.data4;
+}uint32_t UBX_UART::getRawData5()
+{
+	return _EsfRawPacket.data5;
+}uint32_t UBX_UART::getRawData6()
+{
+	return _EsfRawPacket.data6;
+}
+uint32_t UBX_UART::getRawsTtag0()
+{
+	return _EsfRawPacket.sTtag0;
+}
+uint32_t UBX_UART::getRawsTtag1()
+{
+	return _EsfRawPacket.sTtag1;
+}uint32_t UBX_UART::getRawsTtag2()
+{
+	return _EsfRawPacket.sTtag2;
+}uint32_t UBX_UART::getRawsTtag3()
+{
+	return _EsfRawPacket.sTtag3;
+}uint32_t UBX_UART::getRawsTtag4()
+{
+	return _EsfRawPacket.sTtag4;
+}uint32_t UBX_UART::getRawsTtag5()
+{
+	return _EsfRawPacket.sTtag5;
+}uint32_t UBX_UART::getRawsTtag6()
+{
+	return _EsfRawPacket.sTtag6;
+}
+/* ESF Mea */
+uint32_t UBX_UART::getMeaData0()
+{
+	return _EsfMeaPacket.data0;
+}
+uint32_t UBX_UART::getMeaData1()
+{
+	return _EsfMeaPacket.data1;
+}uint32_t UBX_UART::getMeaData2()
+{
+	return _EsfMeaPacket.data2;
+}uint32_t UBX_UART::getMeaData3()
+{
+	return _EsfMeaPacket.data3;
+}uint32_t UBX_UART::getMeaData4()
+{
+	return _EsfMeaPacket.data4;
+}uint32_t UBX_UART::getMeaData5()
+{
+	return _EsfMeaPacket.data5;
+}uint32_t UBX_UART::getMeaData6()
+{
+	return _EsfMeaPacket.data6;
+}
+uint32_t UBX_UART::getMeaCalibTtag0()
+{
+	return _EsfMeaPacket.calibTtag0;
+}
+uint32_t UBX_UART::getMeaCalibTtag1()
+{
+	return _EsfMeaPacket.calibTtag1;
+}uint32_t UBX_UART::getMeaCalibTtag2()
+{
+	return _EsfMeaPacket.calibTtag2;
+}uint32_t UBX_UART::getMeaCalibTtag3()
+{
+	return _EsfMeaPacket.calibTtag3;
+}uint32_t UBX_UART::getMeaCalibTtag4()
+{
+	return _EsfMeaPacket.calibTtag4;
+}uint32_t UBX_UART::getMeaCalibTtag5()
+{
+	return _EsfMeaPacket.calibTtag5;
+}uint32_t UBX_UART::getMeaCalibTtag6()
+{
+	return _EsfMeaPacket.calibTtag6;
 }
