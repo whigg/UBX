@@ -68,6 +68,14 @@ class UBX_I2C{
     uint8_t getSec();
     int32_t getNanoSec();
     uint8_t getNumSatellites();
+
+    double getRoll();
+    double getPitch();
+    double getHeading();
+    double getAccRoll();
+    double getAccPitch();
+    double getAccHeading();
+
     double getLongitude_deg();
     double getLatitude_deg();
     double getEllipsoidHeight_m();
@@ -147,19 +155,32 @@ class UBX_I2C{
 
 	enum _ubxMsgType {
 	MT_NONE,
+	MT_NAV_ATT,
 	MT_NAV_PVT,
 	MT_ESF_INS,
 	MT_ESF_MEA,
 	MT_ESF_RAW,
 	MT_ESF_STA
 	};
-
 	private:
 	struct _UBX_MSG {
     uint16_t msg_class_id;
 	uint16_t msg_length;
     uint8_t payload[UBX_MAX_LENGTH];
 	};
+    struct _UBX_NAV_ATT {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+      uint32_t iTOW;
+      uint8_t version;
+      uint8_t reserved1[3];
+      int32_t roll;
+      int32_t pitch;
+      int32_t heading;
+      uint32_t accRoll;
+      uint32_t accPitch;
+      uint32_t accHeading;
+    };
     struct _UBX_NAV_PVT {
       uint16_t msg_class_id;
 	  uint16_t msg_length;
@@ -259,12 +280,18 @@ class UBX_I2C{
       uint8_t numSens;
      };
 
-	_UBX_MSG _tempPacket;
-    _UBX_NAV_PVT _NavPvtPacket;
+
+	union _UBX_MSG_U{
+    _UBX_MSG     _UbxMsgPacket;
+	_UBX_NAV_ATT _NavAttPacket;
+	_UBX_NAV_PVT _NavPvtPacket;
     _UBX_ESF_INS _EsfInsPacket;
     _UBX_ESF_MEA _EsfMeaPacket;
     _UBX_ESF_RAW _EsfRawPacket;
     _UBX_ESF_STA _EsfStaPacket;
+    };
+	
+	_UBX_MSG_U _tempPacket,_validPacket;
 
 	const uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
 	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
