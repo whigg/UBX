@@ -1,5 +1,5 @@
 /*
-UBX_I2C_example.ino
+UBX_UART_example.ino
 Eric De Mey
 e.demey@bluewin.ch
 
@@ -23,9 +23,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
  #include <SD.h>
 const int chipSelect = 10; // sd_card CS
 
-#include "UBX_I2C.h"
-#include <Wire.h> //Needed for I2C to GPS
-UBX_I2C gps;
+#include "UBX_UART.h"
+
+#include <SoftwareSerial.h>
+SoftwareSerial ss(4, 5); // RX, TX
+
+UBX_UART gps(&ss);
 
 void setup()
 {
@@ -41,18 +44,9 @@ void setup()
 
   // serial to display data
   Serial.begin(115200);
-  Serial.println("Ublox GPS I2C Test");
-
+  Serial.println("Ublox GPS UART Test");
   // starting communication with the GPS receiver
-
-  gps.begin(Wire);
-  if (gps.isConnected() == false)
-  {
-    Serial.println(F("Ublox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
-  }
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
-
+  gps.begin(9600);
   gps.sendCfg();
 }
 
@@ -100,11 +94,11 @@ void loop() {
     DataStr+=("\t");
     DataStr+=(gps.getNumSatellites());       ///< [ND], Number of satellites used in Nav Solution
     DataStr+=("\t");
-    DataStr+=(gps.getLatitude_deg());     ///< [deg], Latitude
+    DataStr+=(gps.getLatitude_deg());        ///< [deg], Latitude
     DataStr+=("\t");
-    DataStr+=(gps.getLongitude_deg());    ///< [deg], Longitude
+    DataStr+=(gps.getLongitude_deg());       ///< [deg], Longitude
     DataStr+=("\t");
-    DataStr+=(gps.getMSLHeight_m());       ///< [m], Height above mean sea level
+    DataStr+=(gps.getMSLHeight_m());         ///< [m], Height above mean sea level
     DataStr+=("\n");
 	}
   if (msg_code==gps.MT_ESF_INS) {

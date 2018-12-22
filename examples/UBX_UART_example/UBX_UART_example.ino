@@ -22,7 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "UBX_UART.h"
 
 #include <SoftwareSerial.h>
-SoftwareSerial ss(10, 11); // RX, TX
+SoftwareSerial ss(4, 5); // RX, TX
+
 UBX_UART gps(&ss);
 
 void setup()
@@ -41,7 +42,22 @@ void loop() {
   // been received and displaying some
   // of the packet data
   msg_code = gps.readSensor();
+  if (msg_code==gps.MT_NAV_ATT) {
+    Serial.println("Message NAV_ATT");
+    Serial.print(gps.getRoll());
+    Serial.print("\t");
+    Serial.print(gps.getPitch());
+    Serial.print("\t");
+    Serial.print(gps.getHeading());
+    Serial.print("\t");
+    Serial.print(gps.getAccRoll());
+    Serial.print("\t");
+    Serial.print(gps.getAccPitch());
+    Serial.print("\t");
+    Serial.println(gps.getAccHeading());
+  }
   if (msg_code==gps.MT_NAV_PVT) {
+    Serial.println("Message NAV_PVT");
     Serial.print(gps.getYear());                ///< [year], Year (UTC)
     Serial.print("\t");
     Serial.print(gps.getMonth());               ///< [month], Month, range 1..12 (UTC)
@@ -56,87 +72,33 @@ void loop() {
     Serial.print("\t");
     Serial.print(gps.getNumSatellites());       ///< [ND], Number of satellites used in Nav Solution
     Serial.print("\t");
-    Serial.print(gps.getLatitude_deg(),10);     ///< [deg], Latitude
+    Serial.print(gps.getLatitude_deg());     ///< [deg], Latitude
     Serial.print("\t");
-    Serial.print(gps.getLongitude_deg(),10);    ///< [deg], Longitude
+    Serial.print(gps.getLongitude_deg());    ///< [deg], Longitude
     Serial.print("\t");
     Serial.println(gps.getMSLHeight_m());       ///< [m], Height above mean sea level
   }
   if (msg_code==gps.MT_ESF_INS) {
-    Serial.print(gps.getBitfield0(),10);
+    Serial.println("Message ESF_INS");
+    Serial.print(gps.getBitfield0());
     Serial.print("\t");
-    Serial.print(gps.getxAngRate(),10);
+    Serial.print(gps.getxAngRate());
     Serial.print("\t");
-    Serial.print(gps.getyAngRate(),10);
+    Serial.print(gps.getyAngRate());
     Serial.print("\t");
-    Serial.print(gps.getzAngRate(),10);
+    Serial.print(gps.getzAngRate());
     Serial.print("\t");
-    Serial.print(gps.getxAccel(),10);
+    Serial.print(gps.getxAccel());
     Serial.print("\t");
-    Serial.print(gps.getyAccel(),10);
+    Serial.print(gps.getyAccel());
     Serial.print("\t");
-    Serial.println(gps.getzAccel(),10);
-  }
-  if (msg_code==gps.MT_ESF_MEA) {
-    Serial.print(gps.getMeaData0(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaData1(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaData2(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaData3(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaData4(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaData5(),10);
-    Serial.print("\t");
-    Serial.println(gps.getMeaData6(),10);
-    Serial.print(gps.getMeaCalibTtag0(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag1(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag2(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag3(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag4(),10);
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag5(),10);
-    Serial.print("\t");
-    Serial.println(gps.getMeaCalibTtag6(),10);
-  }
-  if (msg_code==gps.MT_ESF_RAW)  {
-    Serial.print(gps.getRawData0(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawData1(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawData2(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawData3(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawData4(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawData5(),10);
-    Serial.print("\t");
-    Serial.println(gps.getRawData6(),10);
-    Serial.print(gps.getRawsTtag0(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag1(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag2(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag3(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag4(),10);
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag5(),10);
-    Serial.print("\t");
-    Serial.println(gps.getRawsTtag6(),10);
+    Serial.println(gps.getzAccel());
   }
   if (msg_code==gps.MT_ESF_STA)  {
-    Serial.print(gps.getFusionMode(),10);
+    Serial.println("Message ESF_STATUS");
+    Serial.print(gps.getFusionMode());
     Serial.print("\t");
-    Serial.println(gps.getNumSens(),10);
+    Serial.println(gps.getNumSens());
   }
-  delay(50); //Don't pound too hard on the bus
+  delay(10); //Don't pound too hard on the bus
 }

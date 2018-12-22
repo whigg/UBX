@@ -92,13 +92,6 @@ class UBX_I2C{
     double getHeadingAccuracy_deg();
     float getMagneticDeclination_deg();
     float getMagneticDeclinationAccuracy_deg();
-    double getLongitude_rad();
-    double getLatitude_rad();
-    double getMotionHeading_rad();
-    double getVehicleHeading_rad();
-    double getHeadingAccuracy_rad();
-    float getMagneticDeclination_rad();
-    float getMagneticDeclinationAccuracy_rad();
     float getpDOP();
     enum FixType getFixType();
     enum PowerSaveMode getPowerSaveMode();
@@ -158,8 +151,6 @@ class UBX_I2C{
 	MT_NAV_ATT,
 	MT_NAV_PVT,
 	MT_ESF_INS,
-	MT_ESF_MEA,
-	MT_ESF_RAW,
 	MT_ESF_STA
 	};
 	private:
@@ -230,45 +221,6 @@ class UBX_I2C{
       int32_t yAccel;
       int32_t zAccel;
      };
-    struct _UBX_ESF_MEA {
-      uint16_t msg_class_id;
-	  uint16_t msg_length;
-      uint32_t timeTag;
-	  uint32_t flags;
-      uint32_t id;
-      uint32_t data0;
-	  uint32_t calibTtag0;
-      uint32_t data1;
-	  uint32_t calibTtag1;
-      uint32_t data2;
-	  uint32_t calibTtag2;
-      uint32_t data3;
-	  uint32_t calibTtag3;
-      uint32_t data4;
-	  uint32_t calibTtag4;
-      uint32_t data5;
-	  uint32_t calibTtag5;
-      uint32_t data6;
-	  uint32_t calibTtag6;
-     };
-    struct _UBX_ESF_RAW {
-      uint16_t msg_class_id;
-	  uint16_t msg_length;
-      uint32_t data0;
-	  uint32_t sTtag0;
-      uint32_t data1;
-	  uint32_t sTtag1;
-      uint32_t data2;
-	  uint32_t sTtag2;
-      uint32_t data3;
-	  uint32_t sTtag3;
-      uint32_t data4;
-	  uint32_t sTtag4;
-      uint32_t data5;
-	  uint32_t sTtag5;
-      uint32_t data6;
-	  uint32_t sTtag6;
-     };
     struct _UBX_ESF_STA {
       uint16_t msg_class_id;
 	  uint16_t msg_length;
@@ -280,14 +232,11 @@ class UBX_I2C{
       uint8_t numSens;
      };
 
-
 	union _UBX_MSG_U{
     _UBX_MSG     _UbxMsgPacket;
 	_UBX_NAV_ATT _NavAttPacket;
 	_UBX_NAV_PVT _NavPvtPacket;
     _UBX_ESF_INS _EsfInsPacket;
-    _UBX_ESF_MEA _EsfMeaPacket;
-    _UBX_ESF_RAW _EsfRawPacket;
     _UBX_ESF_STA _EsfStaPacket;
     };
 	
@@ -296,8 +245,6 @@ class UBX_I2C{
 	const uint8_t _gpsI2Caddress = 0x42; //Default 7-bit unshifted address of the ublox 6/7/8/M8 series
 	const uint8_t I2C_POLLING_WAIT_MS = 25; //Limit checking of new characters to every X ms
     const uint8_t _ubxHeader[2] = {0xB5, 0x62};
-    const double _PI = 3.14159265358979323846;
-    const float _deg2rad = _PI/180.0;
 	
 	// Variables
     TwoWire* _bus; //The generic connection to user's chosen I2C hardware

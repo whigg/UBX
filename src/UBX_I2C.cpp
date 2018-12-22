@@ -133,10 +133,6 @@ uint8_t UBX_I2C::_parse(uint8_t _byte)
 						return MT_NAV_PVT;
 					case 0x1510: //ESF_INS
 						return MT_ESF_INS;
-					case 0x0210: //ESF_MEA
-						return MT_ESF_MEA;
-					case 0x0310: //ESF_RAW
-						return MT_ESF_RAW;
 					case 0x1010: //ESF_STATUS
 						return MT_ESF_STA;
 					default:
@@ -162,48 +158,45 @@ void UBX_I2C::_calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length)
 }
 bool UBX_I2C::sendCfg()
 {
-// B5 62 06 00 14 00 00 00 00 00 84 00 00 00 00 00 00 00 01 00 01 00 00 00 00 00 A0 96 //CFG_PRT
-// B5 62 06 01 08 00 01 05 01 00 00 00 00 00 16 D4 //NAV_ATT
-// B5 62 06 01 08 00 01 07 01 00 00 00 00 00 18 E2 //NAV_PVT
-// B5 62 06 01 08 00 10 15 01 00 00 00 00 00 35 BC //ESF_INS 
-// B5 62 06 01 08 00 10 02 01 00 00 00 00 00 22 37 //ESF_MEAS	
-// B5 62 06 01 08 00 10 03 01 00 00 00 00 00 23 3E //ESF_RAW
-// B5 62 06 01 08 00 10 10 01 00 00 00 00 00 30 99 //ESF_STATUS
-/*
+const uint8_t msg_cfg_esfalg[] = {0x06,0x56,0x0C,0x00,0x00,0x89,0xA8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //SET esfalg
 const uint8_t msg_cfg_nav5[] = {0x06,0x24,0x24,0x00,
 0xFF,0xFF,0x0A,0x03,0x00,0x00,0x00,0x00,
-0x10,0x27,0x00,0x00,0x05,0x00,0xFA,0x00,
-0xFA,0x00,0x64,0x00,0x2C,0x01,0x00,0x00,
+0x10,0x27,0x00,0x00,0x0A,0x00,0xFA,0x00,
+0xFA,0x00,0x64,0x00,0x5E,0x01,0x00,0x3C,
 0x00,0x00,0x10,0x27,0x00,0x00,0x00,0x00,
-0x00,0x00,0x00,0x00};
-*/
-// const uint8_t msg_cfg_def[] = {0x06,0x09,0x0D,0x00,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0x00,0x00,0x03};
-const uint8_t msg_cfg_prt[] = {0x06,0x00,0x14,0x00,0x00,0x00,0x00,0x00,0x84,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x00,0x00,0x00};
-const uint8_t msg_nav_att[] = {0x06,0x01,0x08,0x00,0x01,0x05,0x01,0x00,0x00,0x00,0x00,0x00};
-const uint8_t msg_nav_pvt[] = {0x06,0x01,0x08,0x00,0x01,0x07,0x01,0x00,0x00,0x00,0x00,0x00};
-const uint8_t msg_esf_ins[] = {0x06,0x01,0x08,0x00,0x10,0x15,0x01,0x00,0x00,0x00,0x00,0x00};
-const uint8_t msg_esf_mea[] = {0x06,0x01,0x08,0x00,0x10,0x02,0x01,0x00,0x00,0x00,0x00,0x00};
-const uint8_t msg_esf_raw[] = {0x06,0x01,0x08,0x00,0x10,0x03,0x01,0x00,0x00,0x00,0x00,0x00};
-const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x01,0x00,0x00,0x00,0x00,0x00};
+0x00,0x00,0x00,0x00}; // Bike dynamic
+//const uint8_t msg_sos_bck[] = {0x09,0x14,0x04,0x00,0x00,0x00,0x00,0x00};//backup;
+//const uint8_t msg_sos_clr[] = {0x09,0x14,0x04,0x00,0x01,0x00,0x00,0x00};//clear
+//const uint8_t msg_esf_rstalg[] = {0x10,0x13,0x00,0x00}; // reset esfalg
+//const uint8_t msg_cfg_rst[] = {0x06,0x04,0x04,0x00,0x00,0x00,0x08,0x00}; //STOP GNSS
+const uint8_t msg_cfg_def[] = {0x06,0x09,0x0D,0x00,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xFF,0xFF,0x00,0x00,0x03}; // restore def cfg
+const uint8_t msg_cfg_i2c[] = {0x06,0x00,0x14,0x00,0x00,0x00,0x00,0x00,0x84,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x00,0x00,0x00};
+const uint8_t msg_nav_att[] = {0x06,0x01,0x08,0x00,0x01,0x05,0x01,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_nav_pvt[] = {0x06,0x01,0x08,0x00,0x01,0x07,0x01,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_ins[] = {0x06,0x01,0x08,0x00,0x10,0x15,0x01,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x01,0x01,0x00,0x00,0x00,0x00};
 
-//	for (uint8_t i=0; i < sizeof(msg_cfg_def); i++)
-//      *((uint8_t *) &_tempPacket + i) = msg_cfg_def[i];
-	for (uint8_t i=0; i < sizeof(msg_cfg_prt); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_cfg_prt[i];
+	for (uint8_t i=0; i < sizeof(msg_cfg_def); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_cfg_def[i];
+	if (not _sendCommand()) return (false);
+	delay(1000);
+	for (uint8_t i=0; i < sizeof(msg_cfg_esfalg); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_cfg_esfalg[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_cfg_nav5); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_cfg_nav5[i];
+	if (not _sendCommand()) return (false);
+	for (uint8_t i=0; i < sizeof(msg_cfg_i2c); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_cfg_i2c[i];
 	if (not _sendCommand()) return (false);
 	for (uint8_t i=0; i < sizeof(msg_nav_att); i++)
       *((uint8_t *) &_tempPacket + i) = msg_nav_att[i];
+	if (not _sendCommand()) return (false);
 	for (uint8_t i=0; i < sizeof(msg_nav_pvt); i++)
       *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
 	if (not _sendCommand()) return (false);
 	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
       *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
-	if (not _sendCommand()) return (false);
-	for (uint8_t i=0; i < sizeof(msg_esf_mea); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_esf_mea[i];
-	if (not _sendCommand()) return (false);
-	for (uint8_t i=0; i < sizeof(msg_esf_raw); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_esf_raw[i];
 	if (not _sendCommand()) return (false);
 	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
       *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
@@ -359,17 +352,6 @@ float UBX_I2C::getMagneticDeclinationAccuracy_deg()
 	return (float)_validPacket._NavPvtPacket.magAcc * 1e-2;
 }
 
-/* longitude, rad */
-double UBX_I2C::getLongitude_rad()
-{
-	return (double)_validPacket._NavPvtPacket.lon * 1e-7 * _deg2rad;
-}
-
-/* latitude, rad */
-double UBX_I2C::getLatitude_rad()
-{
-	return (double)_validPacket._NavPvtPacket.lat * 1e-7 * _deg2rad;
-}
 
 /* height above the ellipsoid, m */
 double UBX_I2C::getEllipsoidHeight_m()
@@ -423,36 +405,6 @@ double UBX_I2C::getGroundSpeed_ms()
 double UBX_I2C::getSpeedAccuracy_ms()
 {
 	return (double)_validPacket._NavPvtPacket.sAcc * 1e-3;
-}
-
-/* 2D heading of motion, rad */
-double UBX_I2C::getMotionHeading_rad()
-{
-	return (double)_validPacket._NavPvtPacket.headMot * 1e-5 * _deg2rad;
-}
-
-/* 2D vehicle heading, rad */
-double UBX_I2C::getVehicleHeading_rad()
-{
-	return (double)_validPacket._NavPvtPacket.headVeh * 1e-5 * _deg2rad;
-}
-
-/* heading accuracy estimate, rad */
-double UBX_I2C::getHeadingAccuracy_rad()
-{
-	return (double)_validPacket._NavPvtPacket.headAcc * 1e-5 * _deg2rad;
-}
-
-/* magnetic declination, rad */
-float UBX_I2C::getMagneticDeclination_rad()
-{
-	return (float)_validPacket._NavPvtPacket.magDec * 1e-2 * _deg2rad;
-}
-
-/* magnetic declination accuracy estimate, rad */
-float UBX_I2C::getMagneticDeclinationAccuracy_rad()
-{
-	return (float)_validPacket._NavPvtPacket.magAcc * 1e-2 * _deg2rad;
 }
 
 /* position dilution of precision */
@@ -539,7 +491,6 @@ bool UBX_I2C::isMagneticDeclinationValid()
 	return _validPacket._NavPvtPacket.valid & 0x08;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
 /* ESF Status */
 uint8_t UBX_I2C::getFusionMode()
@@ -602,99 +553,4 @@ double UBX_I2C::getAccPitch()
 double UBX_I2C::getAccHeading()
 {
 	return (double)_validPacket._NavAttPacket.accHeading * 1e-5;
-}
-
-/* ESF Raw */
-uint32_t UBX_I2C::getRawData0()
-{
-	return _validPacket._EsfRawPacket.data0;
-}
-uint32_t UBX_I2C::getRawData1()
-{
-	return _validPacket._EsfRawPacket.data1;
-}uint32_t UBX_I2C::getRawData2()
-{
-	return _validPacket._EsfRawPacket.data2;
-}uint32_t UBX_I2C::getRawData3()
-{
-	return _validPacket._EsfRawPacket.data3;
-}uint32_t UBX_I2C::getRawData4()
-{
-	return _validPacket._EsfRawPacket.data4;
-}uint32_t UBX_I2C::getRawData5()
-{
-	return _validPacket._EsfRawPacket.data5;
-}uint32_t UBX_I2C::getRawData6()
-{
-	return _validPacket._EsfRawPacket.data6;
-}
-uint32_t UBX_I2C::getRawsTtag0()
-{
-	return _validPacket._EsfRawPacket.sTtag0;
-}
-uint32_t UBX_I2C::getRawsTtag1()
-{
-	return _validPacket._EsfRawPacket.sTtag1;
-}uint32_t UBX_I2C::getRawsTtag2()
-{
-	return _validPacket._EsfRawPacket.sTtag2;
-}uint32_t UBX_I2C::getRawsTtag3()
-{
-	return _validPacket._EsfRawPacket.sTtag3;
-}uint32_t UBX_I2C::getRawsTtag4()
-{
-	return _validPacket._EsfRawPacket.sTtag4;
-}uint32_t UBX_I2C::getRawsTtag5()
-{
-	return _validPacket._EsfRawPacket.sTtag5;
-}uint32_t UBX_I2C::getRawsTtag6()
-{
-	return _validPacket._EsfRawPacket.sTtag6;
-}
-/* ESF Mea */
-uint32_t UBX_I2C::getMeaData0()
-{
-	return _validPacket._EsfMeaPacket.data0;
-}
-uint32_t UBX_I2C::getMeaData1()
-{
-	return _validPacket._EsfMeaPacket.data1;
-}uint32_t UBX_I2C::getMeaData2()
-{
-	return _validPacket._EsfMeaPacket.data2;
-}uint32_t UBX_I2C::getMeaData3()
-{
-	return _validPacket._EsfMeaPacket.data3;
-}uint32_t UBX_I2C::getMeaData4()
-{
-	return _validPacket._EsfMeaPacket.data4;
-}uint32_t UBX_I2C::getMeaData5()
-{
-	return _validPacket._EsfMeaPacket.data5;
-}uint32_t UBX_I2C::getMeaData6()
-{
-	return _validPacket._EsfMeaPacket.data6;
-}
-uint32_t UBX_I2C::getMeaCalibTtag0()
-{
-	return _validPacket._EsfMeaPacket.calibTtag0;
-}
-uint32_t UBX_I2C::getMeaCalibTtag1()
-{
-	return _validPacket._EsfMeaPacket.calibTtag1;
-}uint32_t UBX_I2C::getMeaCalibTtag2()
-{
-	return _validPacket._EsfMeaPacket.calibTtag2;
-}uint32_t UBX_I2C::getMeaCalibTtag3()
-{
-	return _validPacket._EsfMeaPacket.calibTtag3;
-}uint32_t UBX_I2C::getMeaCalibTtag4()
-{
-	return _validPacket._EsfMeaPacket.calibTtag4;
-}uint32_t UBX_I2C::getMeaCalibTtag5()
-{
-	return _validPacket._EsfMeaPacket.calibTtag5;
-}uint32_t UBX_I2C::getMeaCalibTtag6()
-{
-	return _validPacket._EsfMeaPacket.calibTtag6;
 }

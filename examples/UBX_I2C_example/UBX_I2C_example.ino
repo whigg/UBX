@@ -100,64 +100,6 @@ void loop() {
     Serial.print("\t");
     Serial.println(gps.getzAccel());
   }
-  if (msg_code==gps.MT_ESF_MEA) {
-    Serial.println("Message ESF_MEAS");
-    Serial.print(gps.getMeaData0());
-    Serial.print("\t");
-    Serial.print(gps.getMeaData1());
-    Serial.print("\t");
-    Serial.print(gps.getMeaData2());
-    Serial.print("\t");
-    Serial.print(gps.getMeaData3());
-    Serial.print("\t");
-    Serial.print(gps.getMeaData4());
-    Serial.print("\t");
-    Serial.print(gps.getMeaData5());
-    Serial.print("\t");
-    Serial.println(gps.getMeaData6());
-    Serial.print(gps.getMeaCalibTtag0());
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag1());
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag2());
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag3());
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag4());
-    Serial.print("\t");
-    Serial.print(gps.getMeaCalibTtag5());
-    Serial.print("\t");
-    Serial.println(gps.getMeaCalibTtag6());
-  }
-  if (msg_code==gps.MT_ESF_RAW)  {
-    Serial.println("Message ESF_RAW");
-    Serial.print(gps.getRawData0());
-    Serial.print("\t");
-    Serial.print(gps.getRawData1());
-    Serial.print("\t");
-    Serial.print(gps.getRawData2());
-    Serial.print("\t");
-    Serial.print(gps.getRawData3());
-    Serial.print("\t");
-    Serial.print(gps.getRawData4());
-    Serial.print("\t");
-    Serial.print(gps.getRawData5());
-    Serial.print("\t");
-    Serial.println(gps.getRawData6());
-    Serial.print(gps.getRawsTtag0());
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag1());
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag2());
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag3());
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag4());
-    Serial.print("\t");
-    Serial.print(gps.getRawsTtag5());
-    Serial.print("\t");
-    Serial.println(gps.getRawsTtag6());
-  }
   if (msg_code==gps.MT_ESF_STA)  {
     Serial.println("Message ESF_STATUS");
     Serial.print(gps.getFusionMode());
