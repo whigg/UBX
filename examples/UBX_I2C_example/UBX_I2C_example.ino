@@ -84,6 +84,16 @@ void loop() {
     Serial.print("\t");
     Serial.println(gps.getMSLHeight_m());       ///< [m], Height above mean sea level
   }
+    if (msg_code==gps.MT_NAV_VEL) {
+      Serial.println("Message NAV_VEL");
+      Serial.print(gps.getVelX());
+      Serial.print("\t");
+      Serial.print(gps.getVelY());
+      Serial.print("\t");
+      Serial.print(gps.getVelZ());
+      Serial.print("\t");
+      Serial.println(gps.getVelAcc());
+    }
   if (msg_code==gps.MT_ESF_INS) {
     Serial.println("Message ESF_INS");
     Serial.print(gps.getBitfield0());

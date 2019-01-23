@@ -22,12 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #define UBX_UART_h
 
 #include "Arduino.h"
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 #define UBX_MAX_LENGTH 96
 
 class UBX_UART{
   public:
-    UBX_UART(SoftwareSerial *bus);
+ UBX_UART(HardwareSerial& bus);
+// UBX_UART(SoftwareSerial *bus);
     void begin(uint32_t baud);
 
     enum FixType {
@@ -110,6 +111,11 @@ class UBX_UART{
     double getyAccel();
     double getzAccel();
 	
+	double getVelX();
+	double getVelY();
+	double getVelZ();
+	double getVelAcc();
+	
     uint32_t getRawData0();
     uint32_t getRawData1();
     uint32_t getRawData2();
@@ -144,6 +150,7 @@ class UBX_UART{
 	MT_NONE,
 	MT_NAV_ATT,
 	MT_NAV_PVT,
+	MT_NAV_VEL,
 	MT_ESF_INS,
 	MT_ESF_STA
 	};
@@ -202,6 +209,15 @@ class UBX_UART{
       int16_t magDec;
       uint16_t magAcc;
     };
+    struct _UBX_NAV_VEL {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+      uint32_t iTOW;
+      int32_t velX;
+      int32_t velY;
+      int32_t velZ;
+      uint32_t sAcc;
+    };
     struct _UBX_ESF_INS {
       uint16_t msg_class_id;
 	  uint16_t msg_length;
@@ -230,6 +246,7 @@ class UBX_UART{
     _UBX_MSG     _UbxMsgPacket;
 	_UBX_NAV_ATT _NavAttPacket;
 	_UBX_NAV_PVT _NavPvtPacket;
+	_UBX_NAV_VEL _NavVelPacket;
     _UBX_ESF_INS _EsfInsPacket;
     _UBX_ESF_STA _EsfStaPacket;
     };
@@ -239,7 +256,8 @@ class UBX_UART{
     const uint8_t _ubxHeader[2] = {0xB5, 0x62};
 	
 	// Variables
-    SoftwareSerial* _bus;
+//    SoftwareSerial* _bus;
+    HardwareSerial* _bus;
 	
     uint8_t _currentMsgType;
   	uint8_t _parserState;

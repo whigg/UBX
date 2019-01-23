@@ -116,6 +116,11 @@ class UBX_I2C{
     double getyAccel();
     double getzAccel();
 	
+	double getVelX();
+	double getVelY();
+	double getVelZ();
+	double getVelAcc();
+	
     uint32_t getRawData0();
     uint32_t getRawData1();
     uint32_t getRawData2();
@@ -150,6 +155,7 @@ class UBX_I2C{
 	MT_NONE,
 	MT_NAV_ATT,
 	MT_NAV_PVT,
+	MT_NAV_VEL,
 	MT_ESF_INS,
 	MT_ESF_STA
 	};
@@ -208,6 +214,15 @@ class UBX_I2C{
       int16_t magDec;
       uint16_t magAcc;
     };
+    struct _UBX_NAV_VEL {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+      uint32_t iTOW;
+      int32_t velX;
+      int32_t velY;
+      int32_t velZ;
+      uint32_t sAcc;
+    };
     struct _UBX_ESF_INS {
       uint16_t msg_class_id;
 	  uint16_t msg_length;
@@ -236,6 +251,7 @@ class UBX_I2C{
     _UBX_MSG     _UbxMsgPacket;
 	_UBX_NAV_ATT _NavAttPacket;
 	_UBX_NAV_PVT _NavPvtPacket;
+	_UBX_NAV_VEL _NavVelPacket;
     _UBX_ESF_INS _EsfInsPacket;
     _UBX_ESF_STA _EsfStaPacket;
     };

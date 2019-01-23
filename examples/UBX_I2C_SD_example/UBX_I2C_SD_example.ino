@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
  #include <SPI.h>
  #include <SD.h>
-const int chipSelect = 10; // sd_card CS
+const int chipSelect = 53; // sd_card CS
 
 #include "UBX_I2C.h"
 #include <Wire.h> //Needed for I2C to GPS
@@ -29,15 +29,7 @@ UBX_I2C gps;
 
 void setup()
 {
-  Serial.println("Initializing SD card...");
 
-  // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
-    // don't do anything more:
-    while (1);
-  }
-  Serial.println("card initialized.");
 
   // serial to display data
   Serial.begin(115200);
@@ -54,6 +46,16 @@ void setup()
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
 
   gps.sendCfg();
+
+  Serial.println("Initializing SD card...");
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+    while (1);
+  }
+  Serial.println("card initialized.");
 }
 
 void loop() {
@@ -63,12 +65,8 @@ void loop() {
   // been received and displaying some
   // of the packet data
   msg_code = gps.readSensor();
-  if (not(msg_code == gps.MT_NONE)) {
-  // open the file. note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-  File dataFile = SD.open("gpslog.txt", FILE_WRITE);
-
-  msg_code = gps.readSensor();
+  if (msg_code!=gps.MT_NONE){
+    File dataFile = SD.open("gpslog.txt", FILE_WRITE);
   if (msg_code==gps.MT_NAV_ATT) {
     DataStr+=("Message NAV_ATT\n");
     DataStr+=(gps.getRoll());
@@ -107,6 +105,17 @@ void loop() {
     DataStr+=(gps.getMSLHeight_m());       ///< [m], Height above mean sea level
     DataStr+=("\n");
 	}
+    if (msg_code==gps.MT_NAV_VEL) {
+      DataStr+=("Message NAV_VEL\n");
+      DataStr+=(gps.getVelX());
+      DataStr+=("\t");
+      DataStr+=(gps.getVelY());
+      DataStr+=("\t");
+      DataStr+=(gps.getVelZ());
+      DataStr+=("\t");
+      DataStr+=(gps.getVelAcc());
+      DataStr+=("\n");
+    }
   if (msg_code==gps.MT_ESF_INS) {
     DataStr+=("Message ESF_INS\n");
     DataStr+=(gps.getBitfield0());
@@ -135,4 +144,5 @@ void loop() {
    dataFile.print(DataStr);
    dataFile.close();
   }
+  delay(10); //Don't pound too hard on the bus
 }

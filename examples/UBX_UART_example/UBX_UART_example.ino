@@ -21,10 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 #include "UBX_UART.h"
 
-#include <SoftwareSerial.h>
-SoftwareSerial ss(4, 5); // RX, TX
+// #include <SoftwareSerial.h>
+// SoftwareSerial ss(4, 5); // RX, TX
+// UBX_UART gps(&ss);
 
-UBX_UART gps(&ss);
+UBX_UART gps(Serial1);
 
 void setup()
 {
@@ -78,6 +79,16 @@ void loop() {
     Serial.print("\t");
     Serial.println(gps.getMSLHeight_m());       ///< [m], Height above mean sea level
   }
+    if (msg_code==gps.MT_NAV_VEL) {
+      Serial.println("Message NAV_VEL");
+      Serial.print(gps.getVelX());
+      Serial.print("\t");
+      Serial.print(gps.getVelY());
+      Serial.print("\t");
+      Serial.print(gps.getVelZ());
+      Serial.print("\t");
+      Serial.println(gps.getVelAcc());
+    }
   if (msg_code==gps.MT_ESF_INS) {
     Serial.println("Message ESF_INS");
     Serial.print(gps.getBitfield0());
