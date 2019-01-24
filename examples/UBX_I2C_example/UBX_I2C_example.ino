@@ -28,7 +28,6 @@ void setup()
   // serial to display data
   Serial.begin(115200);
   Serial.println("Ublox GPS I2C Test");
-
   // starting communication with the GPS receiver
 
   gps.begin(Wire);
@@ -38,7 +37,6 @@ void setup()
     while (1);
   }
   Wire.setClock(400000); //Increase I2C clock speed to 400kHz
-
   gps.sendCfg();
 }
 
