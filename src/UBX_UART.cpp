@@ -144,7 +144,10 @@ const uint8_t msg_cfg_save[] = {0x06,0x09,0x0D,0x00,0x00,0x00,0x00,0x00,0xFF,0xF
 	for (uint8_t i=0; i < sizeof(msg_cfg_uart); i++)
       *((uint8_t *) &_tempPacket + i) = msg_cfg_uart[i];
 	if (not _sendCommand()) return (false);
-	delay(10);	
+	delay(10);
+//	_bus->end();
+//	delay(10);
+//	_bus->begin(115200);
 	for (uint8_t i=0; i < sizeof(msg_cfg_esfalg); i++)
       *((uint8_t *) &_tempPacket + i) = msg_cfg_esfalg[i];
 	if (not _sendCommand()) return (false);
@@ -153,26 +156,25 @@ const uint8_t msg_cfg_save[] = {0x06,0x09,0x0D,0x00,0x00,0x00,0x00,0x00,0xFF,0xF
       *((uint8_t *) &_tempPacket + i) = msg_cfg_nav5[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_nav_att); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_nav_att[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
 	for (uint8_t i=0; i < sizeof(msg_nav_pvt); i++)
       *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
 	for (uint8_t i=0; i < sizeof(msg_nav_vel); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
+      *((uint8_t *) &_tempPacket + i) = msg_nav_vel[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
+/*	for (uint8_t i=0; i < sizeof(msg_nav_att); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_nav_att[i];
+	if (not _sendCommand()) return (false);
+	delay(10);	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
       *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
 	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
       *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
 	if (not _sendCommand()) return (false);
-	delay(10);
+	delay(10); */
 //	for (uint8_t i=0; i < sizeof(msg_cfg_save); i++)
 //      *((uint8_t *) &_tempPacket + i) = msg_cfg_save[i];
 //	if (not _sendCommand()) return (false);
