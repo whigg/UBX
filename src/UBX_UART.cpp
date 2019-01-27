@@ -46,7 +46,7 @@ uint8_t UBX_UART::readSensor()
 		_currentMsgType=_parse(_bus->read());
 		if (_currentMsgType) return (_currentMsgType);
 		}
-		delay(25);
+		delay(10);
 	}	
     return (MT_NONE);
 } //end checkUbloxI2C()
