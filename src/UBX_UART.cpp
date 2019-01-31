@@ -40,11 +40,11 @@ void UBX_UART::begin(uint32_t baud)
 //Polls I2C for data, passing any new bytes to process()
 //Times out after given amount of time
 uint8_t UBX_UART::readSensor()
-{   int i=5;
-	while (i<6){
-		i++;
+{   bool w=true;
+	while (w){
+		w=false;
 		while (_bus->available()){
-		i=0;
+		w=true;
 		_currentMsgType=_parse(_bus->read());
 		if (_currentMsgType) return (_currentMsgType);
 		}
@@ -162,22 +162,24 @@ const uint8_t msg_cfg_save[] = {0x06,0x09,0x0D,0x00,0x00,0x00,0x00,0x00,0xFF,0xF
       *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
+	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
+      *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
+	if (not _sendCommand()) return (false);
+	delay(10);
+/*
 	for (uint8_t i=0; i < sizeof(msg_nav_att); i++)
       *((uint8_t *) &_tempPacket + i) = msg_nav_att[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
-/*	for (uint8_t i=0; i < sizeof(msg_nav_vel); i++)
+	for (uint8_t i=0; i < sizeof(msg_nav_vel); i++)
       *((uint8_t *) &_tempPacket + i) = msg_nav_vel[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
 	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
       *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
 	if (not _sendCommand()) return (false);
-	delay(10); */
+	delay(10);
+*/
 //	for (uint8_t i=0; i < sizeof(msg_cfg_save); i++)
 //      *((uint8_t *) &_tempPacket + i) = msg_cfg_save[i];
 //	if (not _sendCommand()) return (false);
