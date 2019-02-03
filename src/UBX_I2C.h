@@ -227,7 +227,7 @@ class UBX_I2C{
       uint16_t msg_class_id;
 	  uint16_t msg_length;
       uint32_t bitfield0;
-      uint32_t reserved1;
+      uint8_t reserved[4];
       uint32_t iTOW;
       int32_t xAngRate;
       int32_t yAngRate;
