@@ -111,6 +111,8 @@ class UBX_UART{
     double getyAccel();
     double getzAccel();
 	
+	uint32_t getDistance();
+	
 	double getVelX();
 	double getVelY();
 	double getVelZ();
@@ -150,6 +152,7 @@ class UBX_UART{
 	MT_NONE,
 	MT_NAV_ATT,
 	MT_NAV_PVT,
+	MT_NAV_ODO,
 	MT_NAV_VEL,
 	MT_ESF_INS,
 	MT_ESF_STA
@@ -204,10 +207,20 @@ class UBX_UART{
       uint32_t sAcc;
       uint32_t headAcc;
       uint16_t pDOP;
-      uint8_t reserved[6];
+      uint8_t reserved1[6];
       int32_t headVeh;
       int16_t magDec;
       uint16_t magAcc;
+    };
+    struct _UBX_NAV_ODO {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+	  uint8_t version;
+      uint8_t reserved1[3];
+      uint32_t iTOW;
+      uint32_t distance;
+      uint32_t totalDistance;
+      uint32_t distanceStd;
     };
     struct _UBX_NAV_VEL {
       uint16_t msg_class_id;
@@ -222,7 +235,7 @@ class UBX_UART{
       uint16_t msg_class_id;
 	  uint16_t msg_length;
       uint32_t bitfield0;
-      uint32_t reserved1;
+      uint8_t reserved1[4];
       uint32_t iTOW;
       int32_t xAngRate;
       int32_t yAngRate;
@@ -238,7 +251,7 @@ class UBX_UART{
       uint8_t version;
       uint8_t reserved1[7];
       uint8_t fusionMode;
-      uint16_t reserved2;
+      uint8_t reserved2[2];
       uint8_t numSens;
      };
 
@@ -246,6 +259,7 @@ class UBX_UART{
     _UBX_MSG     _UbxMsgPacket;
 	_UBX_NAV_ATT _NavAttPacket;
 	_UBX_NAV_PVT _NavPvtPacket;
+	_UBX_NAV_ODO _NavOdoPacket;
 	_UBX_NAV_VEL _NavVelPacket;
     _UBX_ESF_INS _EsfInsPacket;
     _UBX_ESF_STA _EsfStaPacket;
