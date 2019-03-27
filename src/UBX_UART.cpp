@@ -114,7 +114,7 @@ void UBX_UART::_calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length)
 		CK[1] += CK[0];
 	}
 }
-bool UBX_UART::sendCfg()
+bool UBX_UART::sendCfg(bool EnAtt, bool EnPvt, bool EnOdo, bool EnVel, bool EnIns, bool EnSta)
 {
 const uint8_t msg_cfg_esfalg[] = {0x06,0x56,0x0C,0x00,0x00,0x89,0xA8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //SET esfalg
 const uint8_t msg_cfg_nav5[] = {0x06,0x24,0x24,0x00,
@@ -162,35 +162,46 @@ const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x00,0x01,0x00,0x00
       *((uint8_t *) &_tempPacket + i) = msg_cfg_nav5[i];
 	if (not _sendCommand()) return (false);
 	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_cfg_odo); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_cfg_odo[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_nav_pvt); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_nav_odo); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_nav_odo[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-/*	for (uint8_t i=0; i < sizeof(msg_nav_att); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_nav_att[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_nav_vel); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_nav_vel[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-	for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
-      *((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
-	if (not _sendCommand()) return (false);
-	delay(10);
-*/
+	if (EnAtt) {
+		for (uint8_t i=0; i < sizeof(msg_nav_att); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_nav_att[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
+	if (EnPvt) {
+		for (uint8_t i=0; i < sizeof(msg_nav_pvt); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_nav_pvt[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
+	if (EnOdo) {
+		for (uint8_t i=0; i < sizeof(msg_cfg_odo); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_cfg_odo[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+		for (uint8_t i=0; i < sizeof(msg_nav_odo); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_nav_odo[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
+	if (EnVel) {
+		for (uint8_t i=0; i < sizeof(msg_nav_vel); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_nav_vel[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
+	if (EnIns) {
+		for (uint8_t i=0; i < sizeof(msg_esf_ins); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_esf_ins[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
+	if (EnSta) {
+		for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
 //	for (uint8_t i=0; i < sizeof(msg_cfg_save); i++)
 //      *((uint8_t *) &_tempPacket + i) = msg_cfg_save[i];
 //	if (not _sendCommand()) return (false);
