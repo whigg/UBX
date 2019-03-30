@@ -114,7 +114,7 @@ void UBX_UART::_calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length)
 		CK[1] += CK[0];
 	}
 }
-bool UBX_UART::sendCfg(bool EnAtt, bool EnPvt, bool EnOdo, bool EnVel, bool EnIns, bool EnSta)
+bool UBX_UART::sendCfg(bool EnPvt, bool EnIns, bool EnOdo, bool EnVel, bool EnSta, bool EnAtt )
 {
 const uint8_t msg_cfg_esfalg[] = {0x06,0x56,0x0C,0x00,0x00,0x89,0xA8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //SET esfalg
 const uint8_t msg_cfg_nav5[] = {0x06,0x24,0x24,0x00,

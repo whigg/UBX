@@ -52,7 +52,7 @@ class UBX_UART{
       FLOAT_SOL,
       FIXED_SOL
     };
-    bool sendCfg(bool EnAtt, bool EnPvt, bool EnOdo, bool EnVel, bool EnIns, bool EnSta);
+    bool sendCfg(bool EnPvt=true, bool EnIns=true, bool EnOdo=true, bool EnVel=false, bool EnSta=false, bool EnAtt=false);
     uint8_t readSensor();
     uint32_t getTow_ms();
     uint16_t getYear();
