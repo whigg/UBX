@@ -52,7 +52,7 @@ class UBX_UART{
       FLOAT_SOL,
       FIXED_SOL
     };
-    bool sendCfg(bool EnPvt=true, bool EnIns=true, bool EnOdo=true, bool EnVel=false, bool EnSta=false, bool EnAtt=false);
+    bool sendCfg(bool EnPvt=true, bool EnIns=true, bool EnOdo=true, bool EnVel=false, bool EnSta=false, bool EnAtt=false, bool EnAlg=false);
     uint8_t readSensor();
     uint32_t getTow_ms();
     uint16_t getYear();
@@ -63,6 +63,10 @@ class UBX_UART{
     uint8_t getSec();
     int32_t getNanoSec();
     uint8_t getNumSatellites();
+
+    double getAlgYaw();
+    double getAlgPitch();
+    double getAlgRoll();
 
     double getRoll();
     double getPitch();
@@ -155,6 +159,7 @@ class UBX_UART{
 	MT_NAV_ODO,
 	MT_NAV_VEL,
 	MT_ESF_INS,
+	MT_ESF_ALG,
 	MT_ESF_STA
 	};
 	private:
@@ -244,6 +249,18 @@ class UBX_UART{
       int32_t yAccel;
       int32_t zAccel;
      };
+	struct _UBX_ESF_ALG {
+      uint16_t msg_class_id;
+	  uint16_t msg_length;
+      uint32_t iTOW;
+      uint8_t version;
+      uint8_t flags;
+      uint8_t error;
+      uint8_t reserved1;
+      uint32_t yaw;
+      int16_t pitch;
+      int16_t roll;
+    };
     struct _UBX_ESF_STA {
       uint16_t msg_class_id;
 	  uint16_t msg_length;
@@ -262,6 +279,7 @@ class UBX_UART{
 	_UBX_NAV_ODO _NavOdoPacket;
 	_UBX_NAV_VEL _NavVelPacket;
     _UBX_ESF_INS _EsfInsPacket;
+	_UBX_ESF_ALG _EsfAlgPacket;
     _UBX_ESF_STA _EsfStaPacket;
     };
 	

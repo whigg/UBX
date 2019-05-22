@@ -91,6 +91,8 @@ uint8_t UBX_UART::_parse(uint8_t _byte)
 						return MT_NAV_VEL;
 					case 0x1510: //ESF_INS
 						return MT_ESF_INS;
+					case 0x1410: //ESF_ALG
+						return MT_ESF_ALG;
 					case 0x1010: //ESF_STATUS
 						return MT_ESF_STA;
 					default:
@@ -114,7 +116,7 @@ void UBX_UART::_calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length)
 		CK[1] += CK[0];
 	}
 }
-bool UBX_UART::sendCfg(bool EnPvt, bool EnIns, bool EnOdo, bool EnVel, bool EnSta, bool EnAtt )
+bool UBX_UART::sendCfg(bool EnPvt, bool EnIns, bool EnOdo, bool EnVel, bool EnSta, bool EnAtt, bool EnAlg )
 {
 const uint8_t msg_cfg_esfalg[] = {0x06,0x56,0x0C,0x00,0x00,0x89,0xA8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //SET esfalg
 const uint8_t msg_cfg_nav5[] = {0x06,0x24,0x24,0x00,
@@ -142,6 +144,7 @@ const uint8_t msg_nav_odo[] = {0x06,0x01,0x08,0x00,0x01,0x09,0x00,0x01,0x00,0x00
 const uint8_t msg_nav_vel[] = {0x06,0x01,0x08,0x00,0x01,0x11,0x00,0x01,0x00,0x00,0x00,0x00};
 const uint8_t msg_esf_ins[] = {0x06,0x01,0x08,0x00,0x10,0x15,0x00,0x01,0x00,0x00,0x00,0x00};
 const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x00,0x01,0x00,0x00,0x00,0x00};
+const uint8_t msg_esf_alg[] = {0x06,0x01,0x08,0x00,0x10,0x14,0x00,0x01,0x00,0x00,0x00,0x00};
 
 	for (uint8_t i=0; i < sizeof(msg_cfg_def); i++)
       *((uint8_t *) &_tempPacket + i) = msg_cfg_def[i];
@@ -199,6 +202,12 @@ const uint8_t msg_esf_sta[] = {0x06,0x01,0x08,0x00,0x10,0x10,0x00,0x01,0x00,0x00
 	if (EnSta) {
 		for (uint8_t i=0; i < sizeof(msg_esf_sta); i++)
 		*((uint8_t *) &_tempPacket + i) = msg_esf_sta[i];
+		if (not _sendCommand()) return (false);
+		delay(10);
+	}
+	if (EnAlg) {
+		for (uint8_t i=0; i < sizeof(msg_esf_alg); i++)
+		*((uint8_t *) &_tempPacket + i) = msg_esf_alg[i];
 		if (not _sendCommand()) return (false);
 		delay(10);
 	}
@@ -503,8 +512,8 @@ double UBX_UART::getzAccel()
 {
 	return (double)_validPacket._EsfInsPacket.zAccel * 1e-2;
 }
-double UBX_UART::getRoll()
 /* NAV Att */
+double UBX_UART::getRoll()
 {
 	return (double)_validPacket._NavAttPacket.roll * 1e-5;
 }
@@ -527,6 +536,19 @@ double UBX_UART::getAccPitch()
 double UBX_UART::getAccHeading()
 {
 	return (double)_validPacket._NavAttPacket.accHeading * 1e-5;
+}
+/* ESF Alg */
+double UBX_UART::getAlgYaw()
+{
+	return (double)_validPacket._EsfAlgPacket.yaw * 1e-2;
+}
+double UBX_UART::getAlgPitch()
+{
+	return (double)_validPacket._EsfAlgPacket.pitch * 1e-2;
+}
+double UBX_UART::getAlgRoll()
+{
+	return (double)_validPacket._EsfAlgPacket.roll * 1e-2;
 }
 /* NAV Vel */
 double UBX_UART::getVelX()
