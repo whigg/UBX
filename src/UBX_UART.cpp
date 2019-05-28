@@ -119,6 +119,7 @@ void UBX_UART::_calcChecksum(uint8_t* CK, uint8_t* payload, uint16_t length)
 bool UBX_UART::sendCfg(bool EnPvt, bool EnIns, bool EnOdo, bool EnVel, bool EnSta, bool EnAtt, bool EnAlg )
 {
 const uint8_t msg_cfg_esfalg[] = {0x06,0x56,0x0C,0x00,0x00,0x89,0xA8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //SET esfalg
+// const uint8_t msg_cfg_esfalg[] = {0x06,0x56,0x0C,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //SET esfalg
 const uint8_t msg_cfg_nav5[] = {0x06,0x24,0x24,0x00,
 0xFF,0xFF,0x0A,0x03,0x00,0x00,0x00,0x00,
 0x10,0x27,0x00,0x00,0x0A,0x00,0xFA,0x00,
@@ -475,6 +476,14 @@ uint32_t UBX_UART::getDistance()
 	return _validPacket._NavOdoPacket.distance;
 }
 /* ESF Status */
+uint8_t UBX_UART::getinitStatus1()
+{
+	return _validPacket._EsfStaPacket.initStatus1;
+}
+uint8_t UBX_UART::getinitStatus2()
+{
+	return _validPacket._EsfStaPacket.initStatus2;
+}
 uint8_t UBX_UART::getFusionMode()
 {
 	return _validPacket._EsfStaPacket.fusionMode;
@@ -538,6 +547,10 @@ double UBX_UART::getAccHeading()
 	return (double)_validPacket._NavAttPacket.accHeading * 1e-5;
 }
 /* ESF Alg */
+uint8_t UBX_UART::getAlgFlags()
+{
+	return (double)_validPacket._EsfAlgPacket.flags;
+}
 double UBX_UART::getAlgYaw()
 {
 	return (double)_validPacket._EsfAlgPacket.yaw * 1e-2;

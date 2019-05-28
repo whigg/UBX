@@ -67,7 +67,8 @@ class UBX_UART{
     double getAlgYaw();
     double getAlgPitch();
     double getAlgRoll();
-
+    uint8_t getAlgFlags();
+	
     double getRoll();
     double getPitch();
     double getHeading();
@@ -105,6 +106,8 @@ class UBX_UART{
     bool isValidTime();
     bool isTimeFullyResolved();
     bool isMagneticDeclinationValid();
+	uint8_t getinitStatus1();
+	uint8_t getinitStatus2();
     uint8_t getFusionMode();
     uint8_t getNumSens();
     uint32_t getBitfield0();
@@ -266,7 +269,9 @@ class UBX_UART{
 	  uint16_t msg_length;
       uint32_t iTOW;
       uint8_t version;
-      uint8_t reserved1[7];
+      uint8_t initStatus1;
+      uint8_t initStatus2;
+      uint8_t reserved1[5];
       uint8_t fusionMode;
       uint8_t reserved2[2];
       uint8_t numSens;
